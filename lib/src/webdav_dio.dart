@@ -29,8 +29,8 @@ class WdDio with DioMixin implements Dio {
     this.debug = false,
   }) {
     this.options = options ?? BaseOptions();
-    // 禁止重定向
-    this.options.followRedirects = false;
+    // 允许重定向
+    this.options.followRedirects = true;
 
     // 状态码错误视为成功
     this.options.validateStatus = (status) => true;
@@ -289,8 +289,8 @@ class WdDio with DioMixin implements Dio {
         // onReceiveProgress: onProgress,
         cancelToken: cancelToken,
       );
-    } on DioError catch (e) {
-      if (e.type == DioErrorType.badResponse) {
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.badResponse) {
         if (e.response!.requestOptions.receiveDataWhenStatusError == true) {
           var res = await transformer.transformResponse(
             e.response!.requestOptions..responseType = ResponseType.json,
@@ -365,7 +365,7 @@ class WdDio with DioMixin implements Dio {
           try {
             await subscription.cancel();
           } finally {
-            completer.completeError(DioError(
+            completer.completeError(DioException(
               requestOptions: resp.requestOptions,
               error: err,
             ));
@@ -379,7 +379,7 @@ class WdDio with DioMixin implements Dio {
           await raf.close();
           completer.complete(resp);
         } catch (err) {
-          completer.completeError(DioError(
+          completer.completeError(DioException(
             requestOptions: resp.requestOptions,
             error: err,
           ));
@@ -389,7 +389,7 @@ class WdDio with DioMixin implements Dio {
         try {
           await _closeAndDelete();
         } finally {
-          completer.completeError(DioError(
+          completer.completeError(DioException(
             requestOptions: resp.requestOptions,
             error: e,
           ));
@@ -414,18 +414,21 @@ class WdDio with DioMixin implements Dio {
         await subscription.cancel();
         await _closeAndDelete();
         if (err is TimeoutException) {
-          throw DioError(
+          throw DioException(
             requestOptions: resp.requestOptions,
             error:
                 'Receiving data timeout[${resp.requestOptions.receiveTimeout}ms]',
-            type: DioErrorType.receiveTimeout,
+            type: DioExceptionType.receiveTimeout,
           );
         } else {
           throw err;
         }
       });
     }
-    await DioMixin.listenCancelForAsyncTask(cancelToken, future);
+    await Future.any([
+      if (cancelToken != null) cancelToken.whenCancel.then((e) => throw e),
+      future,
+    ]);
   }
 
   /// write a file with bytes
@@ -473,7 +476,7 @@ class WdDio with DioMixin implements Dio {
   }) async {
     // fix auth error
     var pResp = await this.wdOptions(self, path, cancelToken: cancelToken);
-    if (pResp.statusCode != 200) {
+    if (pResp.statusCode == null || pResp.statusCode! >= 400) {
       throw newResponseError(pResp);
     }
 
