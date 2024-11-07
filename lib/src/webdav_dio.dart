@@ -23,10 +23,13 @@ class WdDio with DioMixin implements Dio {
   // debug
   final bool debug;
 
+  final HttpClientAdapter? httpAdapter;
+
   WdDio({
     BaseOptions? options,
     this.interceptorList,
     this.debug = false,
+    this.httpAdapter,
   }) {
     this.options = options ?? BaseOptions();
     // 允许重定向
@@ -35,7 +38,7 @@ class WdDio with DioMixin implements Dio {
     // 状态码错误视为成功
     this.options.validateStatus = (status) => true;
 
-    httpClientAdapter = getAdapter();
+    httpClientAdapter = httpAdapter ?? getAdapter();
 
     // 拦截器
     if (interceptorList != null) {

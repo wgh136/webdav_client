@@ -217,11 +217,16 @@ class Client {
 }
 
 /// create new client
-Client newClient(String uri,
-    {String user = '', String password = '', bool debug = false}) {
+Client newClient(
+  String uri, {
+  String user = '',
+  String password = '',
+  bool debug = false,
+  HttpClientAdapter? adapter,
+}) {
   return Client(
     uri: fixSlash(uri),
-    c: WdDio(debug: debug),
+    c: WdDio(debug: debug, httpAdapter: adapter),
     auth: Auth(user: user, pwd: password),
     debug: debug,
   );
