@@ -474,6 +474,10 @@ class WdDio with DioMixin implements Dio {
       self,
       'PUT',
       path,
+      optionsHandler: (options) {
+        options.headers ??= {};
+        options.headers?['content-type'] = 'application/octet-stream';
+      },
       data: data,
       onSendProgress: onProgress,
       cancelToken: cancelToken,
@@ -511,6 +515,7 @@ class WdDio with DioMixin implements Dio {
       optionsHandler: (options) {
         options.headers ??= {};
         options.headers?['content-length'] = length;
+        options.headers?['content-type'] = 'application/octet-stream';
       },
       onSendProgress: onProgress,
       cancelToken: cancelToken,
