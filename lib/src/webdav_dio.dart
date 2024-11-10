@@ -135,7 +135,7 @@ class WdDio with DioMixin implements Dio {
         onReceiveProgress: onReceiveProgress,
         cancelToken: cancelToken,
       );
-    } else if (resp.statusCode == 302) {
+    } else if (resp.statusCode == 302 || resp.statusCode == 301) {
       // 文件位置被重定向到新路径
       if (resp.headers.map.containsKey('location')) {
         List<String>? list = resp.headers.map['location'];
