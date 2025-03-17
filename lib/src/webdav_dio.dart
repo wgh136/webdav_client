@@ -92,20 +92,23 @@ class WdDio with DioMixin implements Dio {
     );
 
     if (resp.statusCode == 401) {
-      String? w3AHeader = resp.headers.value('www-authenticate');
-      String? lowerW3AHeader = w3AHeader?.toLowerCase();
+      var w3AHeader = resp.headers['www-authenticate']
+          ?.map((e) => e.toLowerCase())
+          .toList();
 
       // before is noAuth
       if (self.auth.type == AuthType.NoAuth) {
         // Digest
-        if (lowerW3AHeader?.contains('digest') == true) {
+        if (w3AHeader?.any((e) => e.startsWith('digest')) == true) {
           self.auth = DigestAuth(
-              user: self.auth.user,
-              pwd: self.auth.pwd,
-              dParts: DigestParts(w3AHeader));
+            user: self.auth.user,
+            pwd: self.auth.pwd,
+            dParts:
+                DigestParts(w3AHeader?.firstWhere((e) => e.startsWith('digest'))),
+          );
         }
         // Basic
-        else if (lowerW3AHeader?.contains('basic') == true) {
+        else if (w3AHeader?.any((e) => e.startsWith('basic')) == true) {
           self.auth = BasicAuth(user: self.auth.user, pwd: self.auth.pwd);
         }
         // error
@@ -115,11 +118,13 @@ class WdDio with DioMixin implements Dio {
       }
       // before is digest and Nonce Lifetime is out
       else if (self.auth.type == AuthType.DigestAuth &&
-          lowerW3AHeader?.contains('stale=true') == true) {
+          w3AHeader?.any((e) => e.contains('stale=true')) == true) {
         self.auth = DigestAuth(
-            user: self.auth.user,
-            pwd: self.auth.pwd,
-            dParts: DigestParts(w3AHeader));
+          user: self.auth.user,
+          pwd: self.auth.pwd,
+          dParts: DigestParts(
+              w3AHeader?.firstWhere((e) => e.startsWith('digest'))),
+        );
       } else {
         throw newResponseError(resp);
       }
